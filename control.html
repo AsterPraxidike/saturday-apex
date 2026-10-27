@@ -4,10 +4,13 @@
 <p>Set broadcast details, paste the weekly token, and edit production staff or screen fields below. Save a section to update the OBS pages live. Shared settings apply across matching screen fields.</p>
 <fieldset><legend>Broadcast details — update every screen together</legend>
 <label>Season <input id="season" placeholder="e.g. SPRING 2027"></label>
+<label><input id="autoWeek" type="checkbox"> Count weeks automatically</label>
+<label>Week 1 Saturday <input id="seasonStart" type="date"></label>
+<label>Broadcast timezone <input id="broadcastTimezone" value="America/Chicago"></label>
 <label>Week <input id="week" type="number" min="1" step="1"></label>
 <label>Stage <input id="phase" value="REGULAR SEASON"></label>
 <button id="broadcast" disabled>Update broadcast</button>
-<p>Set the season and week once here. Map and results come from Respawn when reachable, or from imported API results. You can still override a map manually between games.</p>
+<p>Set a season label and its Week 1 Saturday once. Week numbers advance at Saturday midnight in the broadcast timezone. Before that date, pages show Preseason. Leave automatic counting off for a manual week. Map and results come from Respawn when reachable, or from imported API results. You can still override a map manually between games.</p>
 </fieldset>
 <fieldset><legend>Weekly Respawn token and results</legend>
 <label>Stats token <input id="token" type="password" autocomplete="off" placeholder="Enter this week’s token"></label>
@@ -59,7 +62,7 @@ async function load(){
   const option=new Option(name,name);$('scope').add(option);
   const link=document.createElement('a');link.href=config.screens[name];link.textContent=name;link.target='_blank';$('links').append(link,document.createTextNode(' · '));
  }}show();
- $('season').value=state.global.season||''; $('week').value=state.global.week||''; $('phase').value=state.global.phase||'REGULAR SEASON'; $('broadcast').disabled=false;$('saveStaff').disabled=false;$('saveFields').disabled=false;renderStaff(state.screens['stream-ending'].credits);
+ $('season').value=state.global.season||''; $('week').value=config.broadcast.week??''; $('autoWeek').checked=!!state.global.seasonStart;$('seasonStart').value=state.global.seasonStart||'';$('broadcastTimezone').value=state.global.broadcastTimezone||'America/Chicago';updateWeekMode(); $('phase').value=state.global.phase||'REGULAR SEASON'; $('broadcast').disabled=false;$('saveStaff').disabled=false;$('saveFields').disabled=false;renderStaff(state.screens['stream-ending'].credits);
 }
 
 function labelText(key){return key.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,c=>c.toUpperCase());}
@@ -138,12 +141,17 @@ $('saveStaff').onclick=async()=>{
   await writePatch({screens:{'stream-ending':{credits}}});$('status').textContent='Production staff saved. Ending credits update live.';
  }catch(e){$('status').textContent=e.message;}
 };
+function updateWeekMode(){const automatic=$('autoWeek').checked;$('week').disabled=automatic;$('seasonStart').disabled=!automatic;}
+$('autoWeek').onchange=updateWeekMode;
 $('broadcast').onclick=async()=>{
  try{
   const season=$('season').value.trim(), week=Number($('week').value), phase=$('phase').value.trim();
-  if(!season || !Number.isInteger(week) || week<1 || !phase)throw Error('Enter a season, positive whole week number, and stage.');
-  const r=await fetch('/api/state',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({global:{season,week,phase}})});
-  const result=await r.json();if(!r.ok)throw Error(result.error);state=result;show();$('status').textContent='Season and week updated on all screens.';
+  const automatic=$('autoWeek').checked, seasonStart=$('seasonStart').value, broadcastTimezone=$('broadcastTimezone').value.trim();
+  if(!season||!phase)throw Error('Enter a season label and stage.');
+  if(automatic&&!seasonStart)throw Error('Choose the Saturday that counts as Week 1.');
+  if(!automatic&&(!Number.isInteger(week)||week<1))throw Error('Enter a positive whole week number.');
+  const r=await fetch('/api/state',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({global:{season,week:automatic?null:week,phase,seasonStart:automatic?seasonStart:null,broadcastTimezone}})});
+  const result=await r.json();if(!r.ok)throw Error(result.error);state=result;await load();$('status').textContent='Season and week updated on all screens.';
  }catch(e){$('status').textContent=e.message;}
 };
 $('saveToken').onclick=()=>{

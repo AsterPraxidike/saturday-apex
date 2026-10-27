@@ -20,7 +20,7 @@ def set_screen(screen, base_url='http://127.0.0.1:8080', **settings):
 
 def set_broadcast(season, week, phase='REGULAR SEASON', base_url='http://127.0.0.1:8080'):
     """Change every broadcast season/week label in one persistent update."""
-    return set_globals(base_url=base_url, season=season, week=week, phase=phase)
+    return set_globals(base_url=base_url, season=season, week=week, phase=phase, seasonStart=None)
 
 
 def post(path, payload, base_url='http://127.0.0.1:8080'):
@@ -40,3 +40,9 @@ def import_results(payload, base_url='http://127.0.0.1:8080'):
     if isinstance(payload, str):
         payload = json.loads(payload, strict=False)
     return post('/api/results', payload, base_url)
+
+
+def set_season_schedule(season, first_saturday, timezone='America/Chicago', phase='REGULAR SEASON', base_url='http://127.0.0.1:8080'):
+    """Set the opening Saturday once; all screens advance together each Saturday."""
+    return set_globals(base_url=base_url, season=season, seasonStart=first_saturday,
+                       broadcastTimezone=timezone, phase=phase, week=None)

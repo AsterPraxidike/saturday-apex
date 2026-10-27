@@ -1,4 +1,5 @@
 import copy
+from datetime import datetime
 import json
 import os
 from pathlib import Path
@@ -72,6 +73,17 @@ class StateTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 app.update_state({'global': shared})
         self.assertEqual(app.STATE, app.DEFAULTS)
+
+    def test_saturday_rollover_updates_live_labels_without_state_change(self):
+        app.update_state({'global': {'season': 'FALL 2026', 'seasonStart': '2026-10-03'}})
+        saved = copy.deepcopy(app.STATE)
+        with patch('schedule.datetime') as clock:
+            clock.now.return_value = datetime.fromisoformat('2026-10-09T23:59:59-05:00')
+            self.assertEqual(app.effective_settings('intermission')['eventLine'], 'REGULAR SEASON // WEEK 1')
+            clock.now.return_value = datetime.fromisoformat('2026-10-10T00:00:00-05:00')
+            self.assertEqual(app.effective_settings('intermission')['eventLine'], 'REGULAR SEASON // WEEK 2')
+            self.assertIn('WEEK 2', app.effective_settings('stream-ending')['sideText'])
+        self.assertEqual(app.STATE, saved)
 
     def test_clear_week_restores_explicit_event_line(self):
         app.update_state({'global': {'season': 'SPRING', 'week': 2, 'eventLine': 'CUSTOM'}})

@@ -9,6 +9,7 @@ from urllib.request import urlopen
 from urllib.parse import urlencode
 from urllib.error import HTTPError, URLError
 from respawn import summarize, broadcast_patch
+from schedule import broadcast_schedule
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
@@ -37,10 +38,11 @@ def validate(state):
         raise ValueError('global and screens must be objects')
     if set(state['screens']) != set(SCREENS):
         raise ValueError('Keep all six known screen names')
-    known = {key for settings in DEFAULTS['screens'].values() for key in settings} | {'week', 'phase'}
+    known = {key for settings in DEFAULTS['screens'].values() for key in settings} | {'week', 'phase', 'seasonStart', 'broadcastTimezone'}
     if set(state['global']) - known:
         raise ValueError('Unknown global setting')
     shared = state['global']
+    broadcast_schedule(shared)
     if 'week' in shared:
         if type(shared['week']) is not int or shared['week'] < 1:
             raise ValueError('week must be a positive integer')
@@ -110,16 +112,17 @@ def effective_settings(name):
         settings = STATE['screens'][name]
         shared = STATE['global']
         effective = merge(settings, {k:v for k,v in shared.items() if k in settings})
-        if 'week' in shared:
+        week = broadcast_schedule(shared)['week']
+        if week is not None:
             season = shared['season'].strip()
-            week = shared['week']
+            week_label = f'WEEK {week}' if week else 'PRESEASON'
             phase = shared.get('phase', 'REGULAR SEASON').strip()
             if 'eventLine' in effective:
-                effective['eventLine'] = f'{phase} // WEEK {week}'
+                effective['eventLine'] = f'{phase} // {week_label}'
             if 'sideText' in effective:
-                effective['sideText'] = f'COLLEGIATE APEX LEGENDS // {season} // WEEK {week}'
+                effective['sideText'] = f'COLLEGIATE APEX LEGENDS // {season} // {week_label}'
             if name == 'ingame-overlay':
-                effective['eventLine'] = f'{season} WEEK {week}'
+                effective['eventLine'] = f'{season} {week_label}'
                 if effective['mapName']:
                     effective['eventLine'] += f" // {effective['mapName']}"
         return effective
@@ -219,7 +222,7 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         path = urlsplit(self.path).path
         if path == '/api/config':
-            return self.send_data(200, {'publicBaseUrl': PUBLIC_URL, 'screens': {name: PUBLIC_URL + '/' + name for name in SCREENS}})
+            return self.send_data(200, {'broadcast': broadcast_schedule(STATE['global']), 'publicBaseUrl': PUBLIC_URL, 'screens': {name: PUBLIC_URL + '/' + name for name in SCREENS}})
         if path == '/api/state':
             with LOCK:
                 return self.send_data(200, copy.deepcopy(STATE))

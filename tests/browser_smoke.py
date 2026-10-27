@@ -39,6 +39,7 @@ try:
   control.locator('#editor').fill(json.dumps({'colors':{'red':'#123456'},'footer':'BROWSER LIVE'}))
   control.locator('#apply').click();control.get_by_text('Saved. OBS pages update automatically.',exact=True).wait_for()
   pages['intermission'].wait_for_function("document.querySelector('iframe')?.contentDocument?.querySelector('#footer')?.textContent === 'BROWSER LIVE'")
+  control.locator('#autoWeek').uncheck()
   control.locator('#season').fill('SPRING 2027')
   control.locator('#week').fill('2')
   control.locator('#phase').fill('REGULAR SEASON')

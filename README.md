@@ -31,15 +31,16 @@ Edits are saved atomically to a named Docker volume and survive container restar
 
 ## Weekly broadcast details
 
-The control page has Season, Week, and Stage fields. Update them once for the broadcast: Starting Soon, Intermission, Standings, Game Winner, the in-game badge, and Stream Ending's side label follow the same season/week. Week changes are operator-controlled; no calendar schedule has been supplied.
+The control page has Season, Stage, and automatic week controls. Enter the season label and its Week 1 Saturday, using America/Chicago time by default. Week 1 starts on that Saturday, Week 2 starts the following Saturday, and so on; weeks change at local Saturday midnight, including daylight-saving changes. Before the first Saturday, the label reads PRESEASON. The season label is chosen once per season; no season naming or rollover rules have been supplied. All screens read the computed week on every request, so no restart or weekly edit is needed. You can turn automatic counting off and enter a manual week. This keeps these labels synchronized: Starting Soon, Intermission, Standings, Game Winner, the in-game badge, and Stream Ending's side label follow the same season/week. No real Week 1 date has been selected yet; enter the actual opening Saturday to activate automatic counting.
 
 ```python
-from controller import set_broadcast, set_globals
-set_broadcast(season="SPRING 2027", week=2)
+from controller import set_season_schedule, set_globals
+# Example date only: replace with the actual opening Saturday.
+set_season_schedule(season="FALL 2026", first_saturday="2026-10-03")
 set_globals(mapName="Olympus", gameNumber=3)
 ```
 
-When shared `week` is present, the app generates `eventLine` and `sideText` from the shared season, week, and stage. The in-game badge reads `SPRING 2027 WEEK 2 // Olympus`. These generated labels take precedence over literal eventLine/sideText settings; clear shared `week` to return to literal labels. Season must be supplied with week. Map updates also reach Game Winner.
+When shared `seasonStart` is present, Python derives the week from elapsed Saturdays in `broadcastTimezone`. Otherwise the manual shared `week` is used. When either mode is configured, the app generates `eventLine` and `sideText` from the shared season, week, and stage. The in-game badge reads `SPRING 2027 WEEK 2 // Olympus`. These generated labels take precedence over literal eventLine/sideText settings; clear shared `seasonStart` and `week` to return to literal labels. Season must be supplied with week. Map updates also reach Game Winner.
 
 The Respawn private-match endpoint is fetched by Python. Enter this week's token in the dedicated token field, or call `set_stats_token(token)` from Python. Tokens are saved in operator state in the Docker volume, not in code defaults. Changing the token clears last week's standings, champion, latest map, and game winner while preserving school aliases and adjustments. Use the dedicated token button/helper rather than editing the token list directly, so this cleanup happens. Polling runs every 30 seconds by default; a new token may take up to one interval to be queried. Disable API polling with the dedicated button when using imported snapshots only.
 
@@ -94,7 +95,7 @@ Bundled offline font fallbacks remain available. Google Fonts is optional. OBS i
 python3 -m unittest discover -s tests -v
 ```
 
-The 16 tests cover shared precedence, weekly metadata, screen isolation, persistence, rejected updates, override removal, list replacement, the real post-game-six scores, abandoned records, deduplication, school aliases, map IDs, tied champions, weekly token cleanup, and failed-poll data retention. Browser checks rendered all six pages and exercised Python updates, control-page edits, and imported API results. The fixture retains team scores and omits player identifiers.
+The 22 tests cover shared precedence, weekly metadata, screen isolation, persistence, rejected updates, override removal, list replacement, the real post-game-six scores, abandoned records, deduplication, school aliases, map IDs, tied champions, weekly token cleanup, and failed-poll data retention. Browser checks rendered all six pages and exercised Python updates, control-page edits, and imported API results. The fixture retains team scores and omits player identifiers.
 
 Intermission no longer displays an Up Next band; the results feed only describes completed games.
 
