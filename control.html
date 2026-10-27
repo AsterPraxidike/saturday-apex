@@ -1,0 +1,176 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Apex broadcast control</title>
+<style>body{font:16px system-ui;max-width:1000px;margin:32px auto;padding:0 20px;background:#171719;color:#eee}button,select{font:inherit;padding:8px;margin:6px}#editor{box-sizing:border-box;width:100%;height:60vh;background:#252529;color:#fff;padding:16px;font:14px monospace}a{color:#ff8b7c}#status{min-height:24px}fieldset{margin:18px 0;border:1px solid #555;border-radius:8px;padding:16px}input,textarea{font:inherit;padding:8px;background:#252529;color:#fff;border:1px solid #666;border-radius:4px;box-sizing:border-box}input:not([type=checkbox]):not([type=file]),textarea{max-width:100%}.field{display:grid;grid-template-columns:230px minmax(180px,1fr);gap:12px;align-items:start;margin:10px 0}.field input:not([type=checkbox]),.field textarea{width:100%}.array-item{border-left:2px solid #555;padding:8px;margin:10px 0}.staff-row{display:grid;grid-template-columns:1fr 2fr auto;gap:12px;margin:12px 0}summary{cursor:pointer;padding:8px 0}.hint{font-size:14px;color:#bbb}.actions{display:flex;gap:8px;flex-wrap:wrap}h2{font-size:22px}@media(max-width:650px){.field,.staff-row{grid-template-columns:1fr}} </style>
+<h1>Apex broadcast control</h1>
+<p>Set broadcast details, paste the weekly token, and edit production staff or screen fields below. Save a section to update the OBS pages live. Shared settings apply across matching screen fields.</p>
+<fieldset><legend>Broadcast details — update every screen together</legend>
+<label>Season <input id="season" placeholder="e.g. SPRING 2027"></label>
+<label>Week <input id="week" type="number" min="1" step="1"></label>
+<label>Stage <input id="phase" value="REGULAR SEASON"></label>
+<button id="broadcast" disabled>Update broadcast</button>
+<p>Set the season and week once here. Map and results come from Respawn when reachable, or from imported API results. You can still override a map manually between games.</p>
+</fieldset>
+<fieldset><legend>Weekly Respawn token and results</legend>
+<label>Stats token <input id="token" type="password" autocomplete="off" placeholder="Enter this week’s token"></label>
+<button id="saveToken">Use weekly token</button><button id="disableToken">Disable API polling</button>
+<p>Changing the token clears the previous week’s scores, champion, and map. Python polls Respawn every 30 seconds by default. The map comes from the latest completed game, not the next scheduled game.</p>
+<label>Import API results <input id="resultsFile" type="file" accept=".json,.txt,application/json,text/plain"></label>
+<button id="importResults">Import results</button><p id="feedStatus" role="status"></p>
+</fieldset>
+<fieldset><legend>Production staff — ending credits</legend>
+<p>Enter a role and one name per line. Add or remove roles for this broadcast.</p>
+<div id="staff"></div><button id="addStaff">Add role</button><button id="saveStaff" disabled>Save production staff</button>
+</fieldset>
+<h2>Screen settings</h2>
+<p>Select a screen to edit its text, switches, colors, timers, and lists. Shared settings override matching screen values.</p>
+<label>Settings <select id="scope"><option value="global">Shared settings (all screens)</option></select></label>
+<button id="load">Reload settings</button>
+<p id="links"></p><div id="fields"></div><button id="saveFields" disabled>Save fields live</button>
+<details><summary>Advanced JSON editor</summary><textarea id="editor" aria-label="Settings JSON" spellcheck="false"></textarea><button id="apply">Apply JSON live</button></details><p id="status" role="status"></p>
+<p>Example shared settings: <code>{"season":"SEASON 4","eventLine":"FINALS","colors":{"red":"#bd180a"}}</code></p>
+<p>OBS Browser Sources: use the screen links above, at 1920 × 1080. An update redraws the affected screen and restarts its animations; saved countdowns continue. Existing token/paste standings behavior is preserved.</p>
+<script>
+let state;
+async function feedStatus(){
+ try{
+  const r=await fetch('/api/results');const data=await r.json();
+  const parts=[data.tokenConfigured?'Weekly token configured':'No weekly token configured'];
+  if(data.summary)parts.push(data.summary.gamesPlayed+' completed games', 'Latest completed map: '+data.summary.mapName);
+  if(data.status.error)parts.push(data.status.error);
+  else if(data.status.source)parts.push('Source: '+data.status.source);
+  $('feedStatus').textContent=parts.join(' · ');
+ }catch(e){$('feedStatus').textContent='Unable to read API status';}
+}
+async function saveToken(token){
+ const r=await fetch('/api/respawn/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
+ const data=await r.json();if(!r.ok)throw Error(data.error);
+ $('token').value='';await load();await feedStatus();
+ $('status').textContent=token?'Weekly token saved. Previous-week scores cleared.':'API polling disabled. Previous-week scores cleared.';
+}
+
+const $=id=>document.getElementById(id);
+function show(){
+ const value=$('scope').value==='global'?state.global:state.screens[$('scope').value];
+ $('editor').value=JSON.stringify(value,null,2);renderFields(value);
+}
+async function load(){
+ const [r,c]=await Promise.all([fetch('/api/state'),fetch('/api/config')]);
+ if(!r.ok||!c.ok)throw Error('Unable to load settings');state=await r.json();const config=await c.json();
+ if($('scope').options.length===1){for(const name of Object.keys(state.screens)){
+  const option=new Option(name,name);$('scope').add(option);
+  const link=document.createElement('a');link.href=config.screens[name];link.textContent=name;link.target='_blank';$('links').append(link,document.createTextNode(' · '));
+ }}show();
+ $('season').value=state.global.season||''; $('week').value=state.global.week||''; $('phase').value=state.global.phase||'REGULAR SEASON'; $('broadcast').disabled=false;$('saveStaff').disabled=false;$('saveFields').disabled=false;renderStaff(state.screens['stream-ending'].credits);
+}
+
+function labelText(key){return key.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,c=>c.toUpperCase());}
+function element(tag,text){const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;}
+function blankFor(key,items){
+ if(key==='games')return [1,0];
+ if(key==='teams')return {name:'',lobbyName:'',location:'',adjust:0,games:[]};
+ if(key==='credits')return {role:'',names:[]};
+ if(key==='skipGames'||key==='placementPoints')return 0;
+ if(items.length){const value=items[0];if(typeof value==='string')return '';if(typeof value==='number')return 0;if(typeof value==='boolean')return false;return structuredClone(value);}
+ return '';
+}
+function fieldEditor(key,value,parent){
+ if(Array.isArray(value)){
+  const box=element('details'),title=element('summary',labelText(key)+' ('+value.length+')');box.append(title);parent.append(box);
+  const rows=element('div');box.append(rows);const readers=[];
+  function add(item){const row=element('div');row.className='array-item';const read=fieldEditor(key==='games'?'Game':key+' item',item,row);const remove=element('button','Remove');remove.onclick=()=>{row.remove();const index=readers.indexOf(read);if(index>=0)readers.splice(index,1);};row.append(remove);rows.append(row);readers.push(read);}
+  value.forEach(add);const button=element('button','Add '+labelText(key)+' item');button.onclick=()=>{add(blankFor(key,value));box.open=true;};box.append(button);
+  return ()=>readers.map(read=>read());
+ }
+ if(value!==null&&typeof value==='object'){
+  const group=element('fieldset'),legend=element('legend',labelText(key));group.append(legend);parent.append(group);const children={};
+  for(const [k,v] of Object.entries(value))children[k]=fieldEditor(k,v,group);
+  return ()=>Object.fromEntries(Object.entries(children).map(([k,read])=>[k,read()]));
+ }
+ const label=element('label');label.className='field';label.append(element('span',labelText(key)));
+ const input=element(typeof value==='string'&&(value.includes('\n')||value.length>100)?'textarea':'input');
+ if(input.tagName==='INPUT'){input.type=typeof value==='boolean'?'checkbox':typeof value==='number'?'number':'text';if(input.type==='number')input.step='any';}
+ if(typeof value==='boolean')input.checked=value;else input.value=value??'';
+ label.append(input);parent.append(label);
+ return ()=>{if(typeof value==='boolean')return input.checked;if(typeof value==='number'){if(input.value.trim()===''||!Number.isFinite(Number(input.value)))throw Error(labelText(key)+' needs a number');return Number(input.value);}return input.value;};
+}
+let fieldReaders={};
+function renderFields(value){
+ const fields=$('fields');fields.replaceChildren();fieldReaders={};
+ const scope=$('scope').value;
+ if(scope==='global'){
+  fields.append(element('p','Use Broadcast details above for season/week and the dedicated token field for this week’s API token. Shared overrides below apply across screens.'));
+  const picker=element('select');picker.setAttribute('aria-label','Add shared setting');
+  const keys=[...new Set(Object.values(state.screens).flatMap(v=>Object.keys(v)))].filter(k=>!['statsTokens','rankings','credits'].includes(k)&&!(k in value));
+  for(const key of keys)picker.add(new Option(labelText(key),key));
+  const add=element('button','Add shared setting');add.onclick=()=>{const key=picker.value;if(!key)return;const example=Object.values(state.screens).find(v=>key in v)[key];const pending=readFields();pending[key]=structuredClone(example);renderFields(pending);};fields.append(picker,add);
+ }
+ for(const [key,item] of Object.entries(value)){
+  if(['statsTokens','rankings','credits'].includes(key))continue;
+  const group=element('div');fields.append(group);
+  const read=fieldEditor(key,item,group);fieldReaders[key]=read;
+  if(scope==='global'){
+   const remove=element('button','Remove '+labelText(key)+' override');remove.onclick=()=>{delete fieldReaders[key];group.remove();};group.append(remove);
+  }
+  if(scope!=='global'&&key in state.global)group.append(element('p','A shared value currently overrides this field. Edit or remove it in Shared settings.'));
+ }
+}
+function readFields(){return Object.fromEntries(Object.entries(fieldReaders).map(([key,read])=>[key,read()]));}
+async function writePatch(patch){
+ const r=await fetch('/api/state',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+ const data=await r.json();if(!r.ok)throw Error(data.error);state=data;show();return data;
+}
+$('saveFields').onclick=async()=>{
+ try{const scope=$('scope').value,value=readFields();
+  if(scope==='global')for(const key of Object.keys(state.global))if(!(key in value)&&!['statsTokens','rankings','credits'].includes(key))value[key]=null;
+  await writePatch(scope==='global'?{global:value}:{screens:{[scope]:value}});$('status').textContent='Fields saved. OBS pages update automatically.';
+ }catch(e){$('status').textContent=e.message;}
+};
+function staffRow(credit={role:'',names:[]}){
+ const row=element('div');row.className='staff-row';
+ const role=element('input');role.value=credit.role;role.placeholder='Role, e.g. Producer';role.setAttribute('aria-label','Production role');
+ const names=element('textarea');names.value=(credit.names||[]).join('\n');names.placeholder='One name per line';names.setAttribute('aria-label','Staff names');names.rows=2;
+ const remove=element('button','Remove role');remove.onclick=()=>row.remove();row.append(role,names,remove);$('staff').append(row);
+}
+function renderStaff(credits){$('staff').replaceChildren();credits.forEach(staffRow);}
+$('addStaff').onclick=()=>staffRow();
+$('saveStaff').onclick=async()=>{
+ try{const credits=[...$('staff').children].map(row=>({role:row.querySelector('input').value.trim(),names:row.querySelector('textarea').value.split('\n').map(s=>s.trim()).filter(Boolean)}));
+  if(credits.some(c=>!c.role||!c.names.length))throw Error('Each production role needs a role name and at least one staff name.');
+  await writePatch({screens:{'stream-ending':{credits}}});$('status').textContent='Production staff saved. Ending credits update live.';
+ }catch(e){$('status').textContent=e.message;}
+};
+$('broadcast').onclick=async()=>{
+ try{
+  const season=$('season').value.trim(), week=Number($('week').value), phase=$('phase').value.trim();
+  if(!season || !Number.isInteger(week) || week<1 || !phase)throw Error('Enter a season, positive whole week number, and stage.');
+  const r=await fetch('/api/state',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({global:{season,week,phase}})});
+  const result=await r.json();if(!r.ok)throw Error(result.error);state=result;show();$('status').textContent='Season and week updated on all screens.';
+ }catch(e){$('status').textContent=e.message;}
+};
+$('saveToken').onclick=()=>{
+ const token=$('token').value.trim();
+ if(!token){$('status').textContent='Enter a token, or choose Disable API polling.';return;}
+ saveToken(token).catch(e=>$('status').textContent=e.message);
+};
+$('disableToken').onclick=()=>saveToken('').catch(e=>$('status').textContent=e.message);
+$('importResults').onclick=async()=>{
+ try{
+  const file=$('resultsFile').files[0];if(!file)throw Error('Choose an API JSON or text file first.');
+  const r=await fetch('/api/results',{method:'POST',headers:{'Content-Type':'application/json'},body:await file.text()});
+  const data=await r.json();if(!r.ok)throw Error(data.error);
+  await load();await feedStatus();$('status').textContent='Imported '+data.gamesPlayed+' completed games. Standings and ending updated.';
+ }catch(e){$('status').textContent=e.message;}
+};
+$('scope').onchange=show;
+$('load').onclick=()=>load().then(()=>$('status').textContent='Loaded').catch(e=>$('status').textContent=e.message);
+$('apply').onclick=async()=>{
+ try{
+  const value=JSON.parse($('editor').value),scope=$('scope').value;
+  // Send only changed keys; this avoids overwriting another operator's unrelated edits.
+  function diff(old,next){if(next&&typeof next==='object'&&!Array.isArray(next)){const out={};for(const k of Object.keys(next))if(JSON.stringify(old?.[k])!==JSON.stringify(next[k]))out[k]=diff(old?.[k],next[k]);for(const k of Object.keys(old||{}))if(!(k in next))out[k]=null;return out;}return next;}
+  const old=scope==='global'?state.global:state.screens[scope];
+  const patch=scope==='global'?{global:diff(old,value)}:{screens:{[scope]:diff(old,value)}};
+  const r=await fetch('/api/state',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+  const result=await r.json();if(!r.ok)throw Error(result.error);state=result;show();$('status').textContent='Saved. OBS pages update automatically.';
+ }catch(e){$('status').textContent=e.message;}
+};load().catch(e=>$('status').textContent=e.message);feedStatus();setInterval(feedStatus,5000);
+</script></html>

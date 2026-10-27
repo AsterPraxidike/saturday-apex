@@ -1,0 +1,12 @@
+services:
+  broadcast:
+    build: .
+    environment:
+      APEX_PUBLIC_URL: ${APEX_PUBLIC_URL:-https://apex.praxidike.space}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - broadcast-state:/data
+    restart: unless-stopped
+volumes:
+  broadcast-state:

@@ -1,0 +1,38 @@
+/* Apex Legends Collegiate – shared base for broadcast screens (1920x1080) */
+@font-face{font-family:"PoppinsLocal";src:url("fonts/Poppins-Bold.ttf") format("truetype");font-weight:600 900;font-display:block}
+:root{
+  --red:#bd180a;
+  --red-hi:#e8321f;
+  --concrete:#e6e1d8;
+  --ink:#0b0b0c;
+  --white:#f6f4ef;
+  /* Brand fonts are used when installed on the streaming PC; web/bundled fonts are the fallback. */
+  --f-head:"TT Lakes Black","TT Lakes","TTLakes-Black","Russo One","PoppinsLocal",Impact,sans-serif;
+  --f-wide:"TT Lakes","TTLakes-Bold","Saira","PoppinsLocal",system-ui,sans-serif;
+}
+html,body{margin:0;height:100%;overflow:hidden;background:#000}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;
+  font-family:var(--f-wide);-webkit-font-smoothing:antialiased}
+#stage > svg.bg{position:absolute;left:0;top:0;width:1920px;height:1080px}
+[data-fit]{display:block;white-space:nowrap}
+.abs{position:absolute}
+
+.side{position:absolute;top:50%;font:600 15px/1 var(--f-wide);letter-spacing:.42em;white-space:nowrap;opacity:0;animation:fade .8s ease 1s forwards}
+.side.l{left:44px;transform:translate(-50%,-50%) rotate(-90deg)}
+.side.r{right:44px;transform:translate(50%,-50%) rotate(90deg)}
+.footer{position:absolute;font:600 15px/1 var(--f-wide);letter-spacing:.38em;opacity:0;animation:fade .8s ease 1.4s forwards}
+.kick{display:inline-block;background:var(--red);color:#fff;font:700 19px/1 var(--f-wide);letter-spacing:.3em;padding:9px 14px 9px 16px}
+
+.in-up{opacity:0;transform:translateY(18px);animation:up .7s cubic-bezier(.2,.8,.2,1) forwards}
+.in-left{opacity:0;transform:translateX(-60px);animation:up .7s cubic-bezier(.2,.8,.2,1) forwards}
+.in-pop{opacity:0;transform:scale(.6);animation:pop .7s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes up{to{opacity:1;transform:none}}
+@keyframes pop{to{opacity:1;transform:none}}
+@keyframes fade{to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{50%{opacity:0}}
+
+/* rotating message line (used by Screens.ticker) */
+.tk{position:absolute;inset:0;display:flex;align-items:center;white-space:nowrap;overflow:hidden;opacity:0;transform:translateY(22px);transition:opacity .5s,transform .5s}
+.tk.on{opacity:1;transform:none}
+.tk.out{opacity:0;transform:translateY(-22px)}

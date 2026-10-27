@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- PYTHON_SETTINGS -->
+<title>Game Winner – Apex Legends Collegiate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Saira:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  #stage{background:var(--red);color:var(--white)}
+  .dots{position:absolute;inset:0;background:radial-gradient(rgba(0,0,0,.16) 1.3px,transparent 1.6px) 0 0/8px 8px}
+  /* chevrons streaming to the right behind everything */
+  .chevs{position:absolute;left:-400px;top:0;bottom:0;width:2800px;display:flex;align-items:center;gap:60px;animation:chev 9s linear infinite;opacity:.13}
+  .chevs i{flex:none;width:260px;height:1300px;background:#000;clip-path:polygon(0 0,45% 0,100% 50%,45% 100%,0 100%,55% 50%)}
+  @keyframes chev{to{transform:translateX(320px)}}
+  .vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 35%,rgba(50,0,0,.55) 100%)}
+  .band{position:absolute;left:0;right:0;top:300px;height:420px;background:var(--ink);transform:skewY(-4deg);box-shadow:0 30px 60px rgba(0,0,0,.35)}
+  .band::after{content:'';position:absolute;left:0;right:0;bottom:-14px;height:14px;background:var(--white)}
+
+  .logo{left:50%;top:56px;width:560px;transform:translateX(-50%)}
+  .logo.in-up{animation-name:upC}
+  @keyframes upC{from{opacity:0;transform:translate(-50%,18px)}to{opacity:1;transform:translate(-50%,0)}}
+  .game{left:0;right:0;top:248px;text-align:center;font:700 26px/1 var(--f-wide);letter-spacing:.42em}
+  .lbl{left:0;right:0;top:340px;text-align:center;font:700 30px/1 var(--f-wide);letter-spacing:.6em;color:var(--red-hi)}
+  .team{left:160px;right:160px;top:392px;text-align:center;font:400 200px/1 var(--f-head);text-transform:uppercase;
+    text-shadow:10px 10px 0 var(--red)}
+  .team.go{animation:slam .7s cubic-bezier(.3,1.5,.5,1) .5s both}
+  @keyframes slam{from{opacity:0;transform:scale(2.2)}to{opacity:1;transform:none}}
+  .loc{left:0;right:0;top:612px;text-align:center;font:700 26px/1 var(--f-wide);letter-spacing:.4em;color:#bdb7ad}
+  .players{left:0;right:0;top:762px;display:flex;justify-content:center;gap:16px}
+  .players div{background:var(--white);color:var(--ink);font:400 34px/1 var(--f-head);padding:14px 30px;text-transform:uppercase;
+    clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,14px 100%,0 50%)}
+  .stats{left:0;right:0;top:860px;display:flex;justify-content:center;gap:16px}
+  .stats div{min-width:200px;background:var(--ink);padding:14px 26px 16px;text-align:center;border-top:4px solid var(--white)}
+  .stats span{display:block;font:700 16px/1 var(--f-wide);letter-spacing:.3em;color:#bdb7ad}
+  .stats b{display:block;font:400 64px/1 var(--f-head);margin-top:8px;font-variant-numeric:tabular-nums}
+  .footer{left:0;right:0;bottom:30px;text-align:center;font-size:13px;color:rgba(255,255,255,.7)}
+  #confetti{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="chevs" id="chevs"></div>
+  <div class="dots"></div>
+  <div class="vig"></div>
+  <div class="band in-up" style="animation-delay:.1s"></div>
+  <canvas id="confetti" width="1920" height="1080"></canvas>
+
+  <img class="logo abs in-up" id="logo" style="animation-delay:.2s" alt="">
+  <div class="game abs in-up" id="game" style="animation-delay:.3s"></div>
+  <div class="lbl abs in-up" id="lbl" style="animation-delay:.4s"></div>
+  <div class="team abs go" data-fit="200" id="team"></div>
+  <div class="loc abs in-up" id="loc" style="animation-delay:.9s"></div>
+  <div class="players abs" id="players"></div>
+  <div class="stats abs" id="stats"></div>
+  <div class="footer" id="footer"></div>
+</div>
+
+<script src="common.js"></script>
+<script>
+(() => {
+  const { S, esc, fitAll, $, text, showIf } = Screens;
+  $('logo').src = S.logo || 'assets/logo-hex.png';
+  $('chevs').innerHTML = '<i></i>'.repeat(10);
+  text('game', [`GAME ${S.gameNumber ?? ''}`, S.mapName].filter(Boolean).join('  //  '));
+  text('lbl', S.label);
+  text('team', S.teamName);
+  text('loc', S.location); showIf('loc', !!S.location);
+  text('footer', S.footer);
+  $('players').innerHTML = (S.players || []).filter(Boolean).map((p, i) =>
+    `<div class="in-up" style="animation-delay:${1.1 + i * .12}s">${esc(p)}</div>`).join('');
+  const pts = S.points !== '' && S.points != null ? S.points
+    : (S.kills !== '' && S.kills != null ? (+S.winPoints || 0) + (+S.kills || 0) * (S.killPoints ?? 1) : '');
+  const stats = [['KILLS', S.kills], ['DAMAGE', S.damage], ['POINTS', pts]].filter(([, v]) => v !== '' && v != null);
+  $('stats').innerHTML = stats.map(([k, v], i) =>
+    `<div class="in-up" style="animation-delay:${1.45 + i * .12}s"><span>${k}</span><b>${esc(v)}</b></div>`).join('');
+  fitAll();
+
+  if (S.showConfetti === false) return;
+  const cv = $('confetti'), ctx = cv.getContext('2d');
+  const col = S.colors || {};
+  const COLORS = ['#ffffff', col.white || '#f6f4ef', col.black || '#0b0b0c', col.redBright || '#e8321f'];
+  const spawn = init => ({ x: Math.random() * 1920, y: init ? Math.random() * -1080 : -40, w: 10 + Math.random() * 14, h: 6 + Math.random() * 8,
+    vy: 80 + Math.random() * 100, vx: -20 + Math.random() * 40, rot: Math.random() * 6.28, vr: -3 + Math.random() * 6, sw: Math.random() * 6.28,
+    c: COLORS[(Math.random() * COLORS.length) | 0] });
+  const P = Array.from({ length: 80 }, () => spawn(true));
+  let last = performance.now();
+  (function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    ctx.clearRect(0, 0, 1920, 1080);
+    P.forEach((p, i) => {
+      p.sw += dt * 2; p.y += p.vy * dt; p.x += (p.vx + Math.sin(p.sw) * 40) * dt; p.rot += p.vr * dt;
+      if (p.y > 1120) { P[i] = spawn(false); return; }
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(1, Math.abs(Math.cos(p.sw * 1.3)) * .8 + .2);
+      ctx.fillStyle = p.c; ctx.beginPath();
+      ctx.moveTo(-p.w / 2 + 3, -p.h / 2); ctx.lineTo(p.w / 2, -p.h / 2); ctx.lineTo(p.w / 2 - 3, p.h / 2); ctx.lineTo(-p.w / 2, p.h / 2);
+      ctx.fill(); ctx.restore();
+    });
+    requestAnimationFrame(frame);
+  })(last);
+})();
+</script>
+</body>
+</html>

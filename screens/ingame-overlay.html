@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- PYTHON_SETTINGS -->
+<title>In-Game Overlay – Apex Legends Collegiate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Saira:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  html,body{background:transparent!important}
+  body.preview{background:linear-gradient(160deg,#2f3c45 0%,#4a565e 40%,#6b6553 70%,#3a3428 100%)!important}
+  #stage{color:var(--white)}
+
+  .badge{position:absolute;display:flex;align-items:stretch;filter:drop-shadow(0 8px 16px rgba(0,0,0,.35))}
+  .badge .lg{background:var(--ink);display:flex;align-items:center;padding:12px 18px 12px 26px;
+    clip-path:polygon(16px 0,100% 0,100% 100%,16px 100%,0 50%)}
+  .badge .lg img{width:190px;display:block}
+  .badge .gm{background:var(--red);display:flex;flex-direction:column;justify-content:center;padding:0 30px 0 20px;
+    clip-path:polygon(0 0,100% 0,calc(100% - 16px) 50%,100% 100%,0 100%)}
+  .badge .gm b{font:400 36px/1 var(--f-head);white-space:nowrap}
+  .badge .gm span{font:700 13px/1 var(--f-wide);letter-spacing:.24em;margin-top:6px;white-space:nowrap;opacity:.9}
+  .badge .ev{position:absolute;left:26px;top:100%;margin-top:6px;font:700 12px/1 var(--f-wide);letter-spacing:.3em;color:#fff;
+    background:rgba(11,11,12,.75);padding:6px 10px;white-space:nowrap}
+
+  .casters{position:absolute;left:0;right:0;width:max-content;margin:0 auto;bottom:150px;display:flex;align-items:stretch;filter:drop-shadow(0 8px 16px rgba(0,0,0,.35))}
+  .casters .t{background:var(--red);display:flex;align-items:center;padding:0 22px;font:700 16px/1 var(--f-wide);letter-spacing:.28em;
+    clip-path:polygon(14px 0,100% 0,100% 100%,14px 100%,0 50%)}
+  .casters .n{background:var(--ink);display:flex;align-items:center;gap:26px;padding:16px 34px 16px 24px;font:400 34px/1 var(--f-head);text-transform:uppercase;
+    clip-path:polygon(0 0,100% 0,calc(100% - 14px) 50%,100% 100%,0 100%)}
+  .casters .n i{width:10px;height:10px;background:var(--red-hi);transform:rotate(45deg)}
+
+  .pause{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .pause.dim{background:rgba(5,5,6,.6)}
+  .pause .card{background:var(--ink);text-align:center;padding:40px 90px 46px;min-width:900px;
+    clip-path:polygon(50px 0,calc(100% - 50px) 0,100% 50%,calc(100% - 50px) 100%,50px 100%,0 50%);animation:pop .6s cubic-bezier(.3,1.5,.5,1)}
+  .pause img{width:420px;display:block;margin:0 auto 22px}
+  .pause b{display:block;font:400 92px/1 var(--f-head);text-transform:uppercase;color:var(--white)}
+  .pause span{display:block;margin-top:16px;font:700 24px/1 var(--f-wide);letter-spacing:.34em;color:var(--red-hi)}
+  .pause .dots{display:flex;gap:10px;justify-content:center;margin-top:26px}
+  .pause .dots i{width:16px;height:16px;background:var(--red-hi);transform:rotate(45deg);animation:blink 1.2s steps(1) infinite}
+  .pause .dots i:nth-child(2){animation-delay:.4s}.pause .dots i:nth-child(3){animation-delay:.8s}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="badge in-up" id="badge">
+    <div class="lg"><img id="logo" alt=""></div>
+    <div class="gm"><b id="gno"></b><span id="map"></span></div>
+    <div class="ev" id="ev"></div>
+  </div>
+  <div class="casters in-up" id="casters" style="animation-delay:.3s">
+    <div class="t" id="cl"></div><div class="n" id="cn"></div>
+  </div>
+  <div class="pause" id="pause">
+    <div class="card"><img id="plogo" alt=""><b id="pt"></b><span id="px"></span><div class="dots"><i></i><i></i><i></i></div></div>
+  </div>
+</div>
+
+<script src="common.js"></script>
+<script>
+(() => {
+  const { S, qs, esc, $, text, showIf } = Screens;
+  if (qs.has('preview')) document.body.classList.add('preview');
+  $('logo').src = $('plogo').src = S.logo || 'assets/logo-stacked.png';
+
+  // game badge
+  text('gno', `GAME ${S.gameNumber ?? ''}${S.totalGames ? ` / ${S.totalGames}` : ''}`);
+  text('map', S.mapName); showIf('map', !!S.mapName);
+  text('ev', S.eventLine); showIf('ev', !!S.eventLine);
+  const b = $('badge'), M = 40, scale = +S.badgeSize || 1;
+  const pos = String(S.badgePosition || 'top-right');
+  const st = b.style;
+  if (pos.includes('left')) { st.left = M + 'px'; st.transformOrigin = 'left'; }
+  else if (pos.includes('right')) { st.right = M + 'px'; st.transformOrigin = 'right'; }
+  else { st.left = '50%'; st.marginLeft = '0'; }
+  if (pos.startsWith('bottom')) st.bottom = (M + 30) + 'px'; else st.top = M + 'px';
+  const cx = pos.includes('center') ? 'translateX(-50%) ' : '';
+  b.addEventListener('animationend', () => { b.style.opacity = 1; });
+  const nx = (+S.badgeNudgeX || 0) * (pos.includes('right') ? -1 : 1);
+  const ny = (+S.badgeNudgeY || 0) * (pos.startsWith('bottom') ? -1 : 1);
+  st.transform = `${cx}translate(${nx}px, ${ny}px) scale(${scale})`;
+  b.style.animation = 'fade .6s ease .1s forwards';
+
+  // casters
+  showIf('casters', !!S.showCasters);
+  text('cl', S.castersLabel);
+  $('cn').innerHTML = (S.casters || []).filter(Boolean).map(esc).join('<i></i>');
+
+  // pause
+  showIf('pause', !!S.showPause);
+  $('pause').classList.toggle('dim', S.pauseDim !== false);
+  text('pt', S.pauseTitle); text('px', S.pauseText);
+})();
+</script>
+</body>
+</html>

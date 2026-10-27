@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- PYTHON_SETTINGS -->
+<title>Intermission – Apex Legends Collegiate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Saira:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Apex Legends Collegiate – shared base for broadcast screens (1920x1080) */
+@font-face{font-family:"PoppinsLocal";src:url("fonts/Poppins-Bold.ttf") format("truetype");font-weight:600 900;font-display:block}
+:root{
+  --red:#bd180a;
+  --red-hi:#e8321f;
+  --concrete:#e6e1d8;
+  --ink:#0b0b0c;
+  --white:#f6f4ef;
+  /* Brand fonts are used when installed on the streaming PC; web/bundled fonts are the fallback. */
+  --f-head:"TT Lakes Black","TT Lakes","TTLakes-Black","Russo One","PoppinsLocal",Impact,sans-serif;
+  --f-wide:"TT Lakes","TTLakes-Bold","Saira","PoppinsLocal",system-ui,sans-serif;
+}
+html,body{margin:0;height:100%;overflow:hidden;background:#000}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;
+  font-family:var(--f-wide);-webkit-font-smoothing:antialiased}
+#stage > svg.bg{position:absolute;left:0;top:0;width:1920px;height:1080px}
+[data-fit]{display:block;white-space:nowrap}
+.abs{position:absolute}
+
+.side{position:absolute;top:50%;font:600 15px/1 var(--f-wide);letter-spacing:.42em;white-space:nowrap;opacity:0;animation:fade .8s ease 1s forwards}
+.side.l{left:44px;transform:translate(-50%,-50%) rotate(-90deg)}
+.side.r{right:44px;transform:translate(50%,-50%) rotate(90deg)}
+.footer{position:absolute;font:600 15px/1 var(--f-wide);letter-spacing:.38em;opacity:0;animation:fade .8s ease 1.4s forwards}
+.kick{display:inline-block;background:var(--red);color:#fff;font:700 19px/1 var(--f-wide);letter-spacing:.3em;padding:9px 14px 9px 16px}
+
+.in-up{opacity:0;transform:translateY(18px);animation:up .7s cubic-bezier(.2,.8,.2,1) forwards}
+.in-left{opacity:0;transform:translateX(-60px);animation:up .7s cubic-bezier(.2,.8,.2,1) forwards}
+.in-pop{opacity:0;transform:scale(.6);animation:pop .7s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes up{to{opacity:1;transform:none}}
+@keyframes pop{to{opacity:1;transform:none}}
+@keyframes fade{to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{50%{opacity:0}}
+
+/* rotating message line (used by Screens.ticker) */
+.tk{position:absolute;inset:0;display:flex;align-items:center;white-space:nowrap;overflow:hidden;opacity:0;transform:translateY(22px);transition:opacity .5s,transform .5s}
+.tk.on{opacity:1;transform:none}
+.tk.out{opacity:0;transform:translateY(-22px)}
+
+</style>
+<style>
+  #stage{background:var(--red);color:var(--white)}
+  /* giant scrolling words */
+  .marquee{position:absolute;left:-320px;top:-260px;width:2560px;height:1600px;transform:rotate(-8deg);display:flex;flex-direction:column;justify-content:center}
+  .row{height:206px;overflow:hidden;white-space:nowrap}
+  .track{display:inline-flex;font:400 188px/206px var(--f-head);text-transform:uppercase;animation:marq var(--d,60s) linear infinite}
+  .track span{padding:0 34px}
+  .track b{font-weight:400;padding:0 10px;opacity:.75}
+  .row.o .track{color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.3)}
+  .row.d .track{color:rgba(0,0,0,.2)}
+  .row.w .track{color:rgba(255,255,255,.09)}
+  .row.rev .track{animation-direction:reverse}
+  @keyframes marq{to{transform:translateX(-50%)}}
+  .dots{position:absolute;inset:0;background:radial-gradient(rgba(0,0,0,.16) 1.3px,transparent 1.6px) 0 0/8px 8px}
+  .vig{position:absolute;inset:0;background:radial-gradient(ellipse at 35% 50%,transparent 40%,rgba(60,0,0,.45) 100%)}
+
+  .logo{left:120px;top:70px;width:520px;filter:drop-shadow(0 14px 22px rgba(0,0,0,.35))}
+  .kick-w{left:690px;top:108px}
+  .card{left:110px;top:220px;width:960px;height:520px;filter:drop-shadow(0 30px 40px rgba(0,0,0,.4))}
+  .card .hex{position:absolute;inset:0;background:var(--ink);clip-path:polygon(70px 0,calc(100% - 70px) 0,100% 50%,calc(100% - 70px) 100%,70px 100%,0 50%)}
+  .card .cin{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .card .lbl{display:flex;align-items:center;gap:16px;font:700 30px/1 var(--f-wide);letter-spacing:.42em;color:var(--red-hi)}
+  .card .lbl .chev{display:flex;gap:4px}
+  .chev i{display:block;width:14px;height:22px;background:currentColor;clip-path:polygon(0 0,45% 0,100% 50%,45% 100%,0 100%,55% 50%);animation:chev 1.2s ease-in-out infinite}
+  .chev i:nth-child(2){animation-delay:.15s}.chev i:nth-child(3){animation-delay:.3s}
+  @keyframes chev{0%,100%{opacity:.25}40%{opacity:1}}
+  .timer{display:block;white-space:nowrap;width:800px;text-align:center;font:400 250px/1 var(--f-head);font-variant-numeric:tabular-nums;margin:10px 0 6px;letter-spacing:.01em;text-shadow:8px 8px 0 var(--red)}
+  .done .timer{font-size:104px;line-height:1.6;text-shadow:5px 5px 0 var(--red)}
+  .done .card .lbl{visibility:hidden}
+  .bar{display:flex;gap:7px;width:700px}
+  .bar i{flex:1;height:30px;background:rgba(255,255,255,.1);clip-path:polygon(0 0,60% 0,100% 50%,60% 100%,0 100%,40% 50%);transition:background .3s}
+  .bar i.on{background:var(--red-hi)}
+  .bar i.edge{background:#fff}
+
+  .trivia{left:1150px;top:206px;width:640px}
+  .trivia .paper{transform:rotate(2.5deg);background:var(--concrete);color:var(--ink);padding:34px 40px 30px;box-shadow:14px 18px 0 rgba(0,0,0,.28);position:relative;perspective:1200px}
+  .trivia .tape{position:absolute;top:-18px;left:50%;width:170px;height:38px;transform:translateX(-50%) rotate(-3deg);background:rgba(255,255,255,.55);box-shadow:0 2px 4px rgba(0,0,0,.1)}
+  .trivia .top{display:flex;justify-content:space-between;align-items:center}
+  .trivia .top b{font:400 34px/1 var(--f-head);color:var(--red)}
+  .trivia .top span{font:700 18px/1 var(--f-wide);letter-spacing:.2em;color:#6d675e}
+  .trivia .fact{font:700 40px/1.18 var(--f-wide);margin-top:22px;min-height:200px;transform-origin:50% 0;transition:transform .35s ease,opacity .35s ease}
+  .trivia .fact.flip{transform:rotateX(85deg);opacity:0}
+  .trivia .foot{margin-top:14px;padding-top:14px;border-top:2px dashed rgba(0,0,0,.2);font:700 15px/1 var(--f-wide);letter-spacing:.26em;color:#6d675e}
+  .trivia .dots2{display:flex;gap:8px;margin-top:14px}
+  .trivia .dots2 i{width:26px;height:6px;background:rgba(0,0,0,.15)}
+  .trivia .dots2 i.on{background:var(--red)}
+
+  .sticker{left:1590px;top:590px;width:230px;height:230px}
+  .sticker .spin{transform-origin:115px 115px;animation:spin 14s linear infinite}
+
+  .footer{left:120px;bottom:40px;font-size:14px;color:rgba(255,255,255,.75)}
+  .side.r{color:rgba(255,255,255,.75)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="marquee" id="marquee"></div>
+  <div class="dots"></div>
+  <div class="vig"></div>
+
+  <img class="logo abs in-left" style="animation-delay:.15s" id="logo" alt="">
+  <div class="kick-w abs in-up" style="animation-delay:.4s"><span class="kick" style="background:var(--ink)" id="kick"></span></div>
+
+  <div class="card abs in-pop" style="animation-delay:.35s">
+    <div class="hex"></div>
+    <div class="cin">
+      <div class="lbl"><span class="chev"><i></i><i></i><i></i></span><span id="tlbl"></span><span class="chev" style="transform:scaleX(-1)"><i></i><i></i><i></i></span></div>
+      <div class="timer" id="timer">--:--</div>
+      <div class="bar" id="bar"></div>
+    </div>
+  </div>
+
+  <div class="trivia abs in-pop" style="animation-delay:.7s">
+    <div class="paper">
+      <div class="tape"></div>
+      <div class="top"><b id="tt"></b><span id="tn"></span></div>
+      <div class="fact" id="fact"></div>
+      <div class="dots2" id="tdots"></div>
+      <div class="foot">APEX LEGENDS COLLEGIATE // TRIVIA</div>
+    </div>
+  </div>
+
+  <svg id="sticker" class="sticker abs in-pop" style="animation-delay:1.1s" viewBox="0 0 230 230" xmlns="http://www.w3.org/2000/svg">
+    <defs><path id="circ" d="M115,115 m-86,0 a86,86 0 1,1 172,0 a86,86 0 1,1 -172,0"/></defs>
+    <circle cx="115" cy="115" r="112" fill="#0b0b0c"/>
+    <circle cx="115" cy="115" r="66" style="fill:var(--red)"/>
+    <g class="spin"><text fill="#f6f4ef" font-family="Saira, PoppinsLocal, sans-serif" font-weight="700" font-size="21" letter-spacing="2">
+      <textPath href="#circ" id="stickerText" textLength="536" lengthAdjust="spacing"></textPath></text></g>
+    <text id="stickerC" x="115" y="132" text-anchor="middle" fill="#f6f4ef" font-family="Russo One, PoppinsLocal, sans-serif" font-size="50"></text>
+  </svg>
+
+  <div class="footer" id="footer"></div>
+  <div class="side r" id="side"></div>
+</div>
+
+<script>
+/* Shared engine for the broadcast screens. You shouldn't need to edit this file –
+   all the settings live at the top of each screen's .html file. */
+(() => {
+  // eslint-disable-next-line no-undef
+  const S = Object.assign({}, (typeof SETTINGS !== 'undefined' ? SETTINGS : window.SETTINGS) || {});
+  const qs = new URLSearchParams(location.search);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // colors from SETTINGS.colors → CSS variables
+  const col = S.colors || {};
+  const root = document.documentElement.style;
+  [['red', '--red'], ['redBright', '--red-hi'], ['concrete', '--concrete'], ['black', '--ink'], ['white', '--white']]
+    .forEach(([k, v]) => { if (col[k]) root.setProperty(v, col[k]); });
+
+  const stage = document.getElementById('stage');
+  const fit = () => { stage.style.transform = `scale(${Math.min(innerWidth / 1920, innerHeight / 1080)})`; };
+  addEventListener('resize', fit); fit();
+
+  // Countdown target: URL ?at= / ?min= override SETTINGS.startAt / SETTINGS.countdownMinutes.
+  function resolve(name) {
+    const at = qs.get('at') || S.startAt;
+    if (at && /^\d{1,2}(:\d{2})?$/.test(String(at).trim())) {
+      const [h, m] = String(at).trim().split(':').map(Number);
+      const d = new Date(); d.setHours(h, m || 0, 0, 0);
+      if (d.getTime() < Date.now() - 6 * 3600e3) d.setDate(d.getDate() + 1);
+      return { target: d.getTime(), total: (+S.countdownMinutes || 10) * 60 };
+    }
+    const min = +(qs.get('min') || S.countdownMinutes || 0);
+    if (!min) return null;
+    const key = `apexScreens:${name}:${min}`;
+    let t = Date.now() + min * 60e3;
+    try {
+      const saved = +localStorage.getItem(key);
+      if (!qs.has('reset') && saved && saved > Date.now() - 60e3) t = saved;  // survive scene switches
+      else localStorage.setItem(key, String(t));
+    } catch {}
+    return { target: t, total: min * 60 };
+  }
+  function format(left) {
+    const h = Math.floor(left / 3600), m = Math.floor(left % 3600 / 60), s = left % 60;
+    return (h ? `${h}:${String(m).padStart(2, '0')}` : String(m).padStart(2, '0')) + ':' + String(s).padStart(2, '0');
+  }
+  // cb({ left, text, done, progress }) four times a second, or cb(null) when no countdown is set.
+  function countdown(name, cb) {
+    const r = resolve(name);
+    if (!r) { cb(null); return; }
+    const run = () => {
+      const left = Math.max(0, Math.round((r.target - Date.now()) / 1000));
+      cb({ left, done: left === 0, text: left === 0 ? (S.doneText || '00:00') : format(left), progress: Math.min(1, Math.max(0, 1 - left / r.total)) });
+    };
+    run(); setInterval(run, 250);
+  }
+
+  function fitText(el, max) {
+    let s = max; el.style.fontSize = s + 'px';
+    while (el.scrollWidth > el.clientWidth + 1 && s > 20) { s -= 2; el.style.fontSize = s + 'px'; }
+  }
+  function fitAll() { document.querySelectorAll('[data-fit]').forEach(el => fitText(el, +el.dataset.fit)); }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(fitAll, 50));
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  function rotate(list, ms, fn) {
+    if (!list || !list.length) return;
+    let i = 0; fn(list[0], 0);
+    if (list.length > 1) setInterval(() => { i = (i + 1) % list.length; fn(list[i], i); }, ms);
+  }
+  function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+  const $ = id => document.getElementById(id);
+  const text = (id, v) => { const el = $(id); if (el) el.textContent = v ?? ''; return el; };
+  const showIf = (id, on) => { const el = typeof id === 'string' ? $(id) : id; if (el && !on) el.style.display = 'none'; };
+  // Rotating one-line messages that slide up inside a box.
+  function ticker(box, msgs, seconds) {
+    msgs = (msgs || []).filter(Boolean);
+    if (!box || !msgs.length) return false;
+    let i = 0, cur = null;
+    const next = () => {
+      if (cur) { const old = cur; old.classList.remove('on'); old.classList.add('out'); setTimeout(() => old.remove(), 600); }
+      cur = document.createElement('div');
+      cur.className = 'tk';
+      cur.textContent = msgs[i++ % msgs.length];
+      box.appendChild(cur);
+      let fs = parseFloat(getComputedStyle(cur).fontSize);
+      while (cur.scrollWidth > cur.clientWidth + 1 && fs > 12) { fs -= 1; cur.style.fontSize = fs + 'px'; }
+      requestAnimationFrame(() => requestAnimationFrame(() => cur.classList.add('on')));
+    };
+    setTimeout(() => { next(); if (msgs.length > 1) setInterval(next, (+seconds || 6) * 1000); }, 1500);
+    return true;
+  }
+
+  window.Screens = { S, qs, esc, stage, countdown, fitText, fitAll, sleep, rotate, rng, $, text, showIf, ticker };
+})();
+
+</script>
+<script>
+(() => {
+  const { S, esc, stage, countdown, fitText, fitAll, rotate, $, text, showIf } = Screens;
+
+  // background scrolling words
+  const words = (S.scrollingWords && S.scrollingWords.length ? S.scrollingWords : ['INTERMISSION']);
+  const styles = ['o', 'd', 'w', 'o', 'd', 'w', 'o'];
+  $('marquee').innerHTML = styles.map((st, r) => {
+    const shifted = words.slice(r % words.length).concat(words.slice(0, r % words.length));
+    const unit = shifted.map(w => `<span>${esc(w)}</span><b>//</b>`).join('');
+    const half = unit.repeat(3);
+    return `<div class="row ${st} ${r % 2 ? 'rev' : ''}"><div class="track" style="--d:${48 + (r * 7) % 26}s">${half}${half}</div></div>`;
+  }).join('');
+
+  $('logo').src = S.logo || 'assets/logo-stacked.png';
+  text('kick', [S.season, S.eventLine].filter(Boolean).join('  //  '));
+  text('tlbl', S.timerLabel);
+  text('footer', S.footer);
+  text('side', S.sideText); showIf('side', S.showSideText !== false);
+  text('stickerText', S.stickerText || 'BE RIGHT BACK • ');
+  text('stickerC', S.stickerCenter);
+  showIf('sticker', S.showSticker !== false);
+  fitAll();
+
+  // countdown + chevron progress bar
+  const N = 16, bar = $('bar'), timer = $('timer');
+  bar.innerHTML = '<i></i>'.repeat(N);
+  countdown('intermission', c => {
+    if (!c) { timer.textContent = S.doneText || ''; stage.classList.add('done'); bar.style.display = 'none'; return; }
+    if (timer.textContent !== c.text) { const relen = timer.textContent.length !== c.text.length; timer.textContent = c.text; if (relen) fitText(timer, c.done ? 104 : 250); }
+    stage.classList.toggle('done', c.done);
+    const lit = Math.round(c.progress * N);
+    [...bar.children].forEach((el, i) => { el.className = i < lit ? (i === lit - 1 && !c.done ? 'edge' : 'on') : ''; });
+  });
+
+  // trivia card
+  const facts = (S.trivia || []).filter(Boolean);
+  const card = document.querySelector('.trivia');
+  if (!facts.length || S.showTrivia === false) { card.style.display = 'none'; return; }
+  text('tt', S.triviaTitle);
+  const fact = $('fact'), tn = $('tn'), td = $('tdots');
+  td.innerHTML = '<i></i>'.repeat(facts.length);
+  const fitFact = () => { let s = 40; fact.style.fontSize = s + 'px'; while (fact.scrollHeight > 210 && s > 24) { s -= 2; fact.style.fontSize = s + 'px'; } };
+  const show = (f, i) => {
+    const apply = () => {
+      fact.textContent = f; fitFact();
+      tn.textContent = `${String(i + 1).padStart(2, '0')} / ${String(facts.length).padStart(2, '0')}`;
+      [...td.children].forEach((el, k) => el.classList.toggle('on', k === i));
+      fact.classList.remove('flip');
+    };
+    if (!fact.textContent) return apply();
+    fact.classList.add('flip'); setTimeout(apply, 360);
+  };
+  // Random trivia order without repeats until every fact has been shown once.
+  const shuffledFacts = [];
+  const refillTrivia = () => {
+    shuffledFacts.length = 0;
+    shuffledFacts.push(...facts.map((f, i) => ({ f, i })));
+    for (let i = shuffledFacts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledFacts[i], shuffledFacts[j]] = [shuffledFacts[j], shuffledFacts[i]];
+    }
+  };
+
+  refillTrivia();
+  let triviaPos = 0;
+  const showNextRandomFact = () => {
+    if (!shuffledFacts.length) return;
+    if (triviaPos >= shuffledFacts.length) {
+      refillTrivia();
+      triviaPos = 0;
+    }
+    const item = shuffledFacts[triviaPos++];
+    show(item.f, item.i);
+  };
+
+  showNextRandomFact();
+  setInterval(showNextRandomFact, (+S.triviaSeconds || 9) * 1000);
+})();
+</script>
+</body>
+</html>

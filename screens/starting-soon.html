@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- PYTHON_SETTINGS -->
+<title>Starting Soon – Apex Legends Collegiate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Saira:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  #stage{background:var(--concrete);color:var(--ink)}
+  .redp{transform:translateX(-1200px);animation:slideR 1s cubic-bezier(.2,.8,.2,1) .05s forwards}
+  .stripe{transform:translateX(-1200px);animation:slideR 1s cubic-bezier(.2,.8,.2,1) .2s forwards}
+  .sweep{animation:sweep 6s ease-in-out 2s infinite}
+  @keyframes slideR{to{transform:none}}
+  @keyframes sweep{0%{transform:translateY(-1300px)}55%,100%{transform:translateY(1300px)}}
+
+  .logo{left:110px;top:66px;width:560px;filter:drop-shadow(0 14px 22px rgba(0,0,0,.3))}
+  .kick-w{left:110px;top:222px}
+  .kick-w .kick{background:var(--ink)}
+  .h1{left:106px;top:270px;width:760px;font-family:var(--f-head);line-height:.9;text-transform:uppercase}
+  .h1 .a{color:var(--white)}
+  .h1 .b{color:var(--ink);position:relative}
+  .h1 .b::after{content:attr(data-t);position:absolute;left:0;top:0;color:transparent;-webkit-text-stroke:2px rgba(246,244,239,.7);
+    transform:translate(9px,-7px);animation:echo 3.2s ease-in-out infinite}
+  @keyframes echo{0%,100%{transform:translate(9px,-7px)}50%{transform:translate(15px,-11px)}}
+
+  .tbox{left:110px;top:600px;width:740px;background:var(--ink);color:var(--white);padding:22px 34px 26px;box-shadow:12px 12px 0 rgba(0,0,0,.22)}
+  .tbox .lbl{display:flex;align-items:center;gap:12px;font:700 21px/1 var(--f-wide);letter-spacing:.32em;color:var(--red-hi)}
+  .tbox .lbl i{width:12px;height:12px;background:var(--red-hi);transform:rotate(45deg);animation:blink 1s steps(1) infinite}
+  .timer{display:block;white-space:nowrap;width:672px;font:400 168px/.95 var(--f-head);font-variant-numeric:tabular-nums;margin-top:8px}
+  .done .timer{color:var(--red-hi)}
+  .next{left:112px;top:902px;font:700 28px/1 var(--f-wide);letter-spacing:.2em;color:var(--white)}
+  .next::before{content:'';display:inline-block;width:14px;height:14px;background:var(--white);margin-right:14px;transform:rotate(45deg) translateY(-2px)}
+
+  /* squads board */
+  .board{left:1080px;top:190px;width:760px}
+  .board .hd{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:4px solid var(--ink);padding-bottom:12px}
+  .board .hd b{font:400 46px/1 var(--f-head);text-transform:uppercase}
+  .board .hd span{font:400 46px/1 var(--f-head);color:var(--red);font-variant-numeric:tabular-nums}
+  .done .board .hd b{color:var(--red)}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
+  .sq{position:relative;height:var(--h,92px);opacity:0;animation:up .5s cubic-bezier(.2,.8,.2,1) forwards}
+  .sq .hx{position:absolute;inset:0;background:rgba(11,11,12,.1);
+    clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 50%,calc(100% - 16px) 100%,16px 100%,0 50%);transition:background .35s}
+  .sq .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px}
+  .sq .n{font:700 19px/1 var(--f-wide);letter-spacing:.08em;color:rgba(11,11,12,.45);white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;transition:color .35s}
+  .sq .p{display:flex;gap:6px}
+  .sq .p i{width:22px;height:8px;background:rgba(11,11,12,.18);transform:skewX(-25deg);transition:background .35s}
+  .sq.ready .hx{background:var(--ink)}
+  .sq.ready .n{color:var(--white)}
+  .sq.ready .p i{background:var(--red-hi)}
+  .sq.flash .hx{animation:flash .6s ease}
+  @keyframes flash{0%{background:var(--red-hi)}100%{background:var(--ink)}}
+  .sq.flash{animation:sqpop .45s cubic-bezier(.3,1.7,.5,1)}
+  @keyframes sqpop{0%{transform:scale(.85)}100%{transform:none;opacity:1}}
+  .sq.flash, .sq.ready{opacity:1}
+
+  /* bottom bar */
+  .bar{left:0;right:0;top:990px;height:56px;background:var(--ink);color:var(--white);display:flex;align-items:center}
+  .bar .tag{height:100%;display:flex;align-items:center;padding:0 40px 0 110px;background:var(--red);font:700 18px/1 var(--f-wide);letter-spacing:.3em;
+    clip-path:polygon(0 0,100% 0,calc(100% - 24px) 100%,0 100%)}
+  .bar .msg{position:relative;flex:1;height:100%;margin:0 30px}
+  .bar .msg .tk{font:700 20px/1 var(--f-wide);letter-spacing:.2em}
+  .bar .ft{font:600 12px/1 var(--f-wide);letter-spacing:.3em;color:rgba(246,244,239,.5);padding-right:60px;white-space:nowrap}
+  .side.l{color:rgba(255,255,255,.88);top:470px}
+  .side.r{color:var(--red);top:470px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <svg class="bg" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="blotch" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency=".006 .009" numOctaves="4" seed="7"/>
+        <feColorMatrix values="0 0 0 0 .35  0 0 0 0 .33  0 0 0 0 .3  0 0 0 -1.6 1.05"/>
+      </filter>
+      <filter id="grain" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3" stitchTiles="stitch"/>
+        <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 -.18"/>
+      </filter>
+      <pattern id="hex" width="56" height="96" patternUnits="userSpaceOnUse">
+        <path d="M28 0L56 16L56 48L28 64L0 48L0 16Z M28 64L28 96" fill="none" stroke="rgba(40,35,30,.07)" stroke-width="1.4"/>
+      </pattern>
+      <pattern id="dots" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+        <circle cx="3.5" cy="3.5" r="1.25" fill="rgba(0,0,0,.2)"/>
+      </pattern>
+      <linearGradient id="sweepG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="stripeClip"><polygon points="930,0 970,0 1090,540 970,1080 930,1080 1050,540"/></clipPath>
+    </defs>
+    <rect width="1920" height="1080" style="fill:var(--concrete)"/>
+    <rect width="1920" height="1080" filter="url(#blotch)" opacity=".28"/>
+    <rect width="1920" height="1080" fill="url(#hex)"/>
+    <g class="redp">
+      <polygon points="0,0 880,0 1000,540 880,1080 0,1080" style="fill:var(--red)"/>
+      <polygon points="0,0 880,0 1000,540 880,1080 0,1080" fill="url(#dots)"/>
+    </g>
+    <g class="stripe">
+      <polygon points="930,0 970,0 1090,540 970,1080 930,1080 1050,540" fill="#ebe8e2"/>
+      <g clip-path="url(#stripeClip)"><rect class="sweep" x="900" y="0" width="220" height="300" fill="url(#sweepG)"/></g>
+    </g>
+    <rect width="1920" height="1080" filter="url(#grain)" opacity=".35"/>
+  </svg>
+
+  <div class="side l" id="sideL"></div>
+  <div class="side r" id="sideR"></div>
+  <img class="logo abs in-left" id="logo" style="animation-delay:.25s" alt="">
+  <div class="kick-w abs in-up" style="animation-delay:.45s"><span class="kick" id="kick"></span></div>
+  <div class="h1 abs">
+    <span class="a in-left" data-fit="168" id="t1" style="animation-delay:.6s"></span>
+    <span class="b in-left" data-fit="168" id="t2" style="animation-delay:.75s"></span>
+  </div>
+  <div class="tbox abs in-up" id="tbox" style="animation-delay:.95s">
+    <div class="lbl"><i></i><span id="tlbl"></span></div>
+    <div class="timer" id="timer">--:--</div>
+  </div>
+  <div class="next abs in-up" id="next" style="animation-delay:1.1s"></div>
+
+  <div class="board abs in-up" id="board" style="animation-delay:.9s">
+    <div class="hd"><b id="bt"></b><span id="bc"></span></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="bar abs in-up" style="animation-delay:1.2s">
+    <div class="tag" id="bartag"></div>
+    <div class="msg" id="msgs"></div>
+    <div class="ft" id="footer"></div>
+  </div>
+</div>
+
+<script src="common.js"></script>
+<script>
+(() => {
+  const { S, esc, stage, countdown, fitText, fitAll, rng, $, text, showIf, ticker } = Screens;
+
+  $('logo').src = S.logo || 'assets/logo-hex.png';
+  text('kick', [S.season, S.eventLine].filter(Boolean).join('  //  '));
+  text('t1', S.titleLine1);
+  text('t2', S.titleLine2); $('t2').dataset.t = S.titleLine2 || '';
+  text('tlbl', S.timerLabel);
+  text('next', S.nextUp); showIf('next', !!S.nextUp);
+  text('footer', S.footer);
+  text('bartag', S.messagesTag);
+  text('sideL', S.sideText); text('sideR', S.sideText);
+  showIf('sideL', S.showSideText !== false); showIf('sideR', S.showSideText !== false);
+  fitAll();
+
+  // squads board
+  const squads = (S.squads || []).filter(Boolean);
+  const showSquads = S.showSquads !== false && squads.length;
+  showIf('board', showSquads);
+  const grid = $('grid');
+  const rows = Math.ceil(squads.length / 4) || 1;
+  const h = Math.max(58, Math.min(104, Math.floor((640 - (rows - 1) * 12) / rows)));
+  grid.innerHTML = squads.map((n, i) =>
+    `<div class="sq" style="--h:${h}px;animation-delay:${1.1 + i * .04}s"><div class="hx"></div><div class="c"><div class="n">${esc(n)}</div><div class="p"><i></i><i></i><i></i></div></div></div>`).join('');
+  const tiles = [...grid.children];
+  // squads check in in a shuffled (but repeatable) order
+  const order = tiles.map((_, i) => i), rand = rng(7);
+  for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+  let readyCount = -1;
+  const setReady = (n, animate) => {
+    order.forEach((ti, k) => {
+      const el = tiles[ti], on = k < n;
+      if (on && !el.classList.contains('ready')) { el.classList.add('ready'); if (animate) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 700); } }
+      if (!on) el.classList.remove('ready');
+    });
+    text('bc', `${n} / ${tiles.length}`);
+    text('bt', n >= tiles.length && tiles.length ? (S.squadsDone || S.squadsTitle) : S.squadsTitle);
+  };
+
+  // countdown
+  const timer = $('timer');
+  countdown('starting', c => {
+    if (!c) { showIf('tbox', false); setReady(tiles.length, false); return; }
+    if (timer.textContent !== c.text) {
+      const relen = timer.textContent.length !== c.text.length;
+      timer.textContent = c.text;
+      if (relen) fitText(timer, 168);
+    }
+    stage.classList.toggle('done', c.done);
+    const n = Math.min(tiles.length, Math.floor(c.progress * tiles.length + 1e-6));
+    if (n !== readyCount) { setReady(n, readyCount !== -1); readyCount = n; }
+  });
+
+  // bottom bar messages
+  if (S.showMessages === false || !ticker($('msgs'), S.messages, S.messageSeconds)) showIf('bartag', false);
+})();
+</script>
+</body>
+</html>
