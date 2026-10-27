@@ -38,7 +38,7 @@ def validate(state):
         raise ValueError('global and screens must be objects')
     if set(state['screens']) != set(SCREENS):
         raise ValueError('Keep all six known screen names')
-    known = {key for settings in DEFAULTS['screens'].values() for key in settings} | {'week', 'phase', 'seasonStart', 'broadcastTimezone'}
+    known = {key for settings in DEFAULTS['screens'].values() for key in settings} | {'week', 'phase', 'seasonStart', 'broadcastTimezone', 'skippedSaturdays'}
     if set(state['global']) - known:
         raise ValueError('Unknown global setting')
     shared = state['global']

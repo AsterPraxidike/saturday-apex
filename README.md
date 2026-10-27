@@ -31,12 +31,12 @@ Edits are saved atomically to a named Docker volume and survive container restar
 
 ## Weekly broadcast details
 
-The control page has Season, Stage, and automatic week controls. Enter the season label and its Week 1 Saturday, using America/Chicago time by default. Week 1 starts on that Saturday, Week 2 starts the following Saturday, and so on; weeks change at local Saturday midnight, including daylight-saving changes. Before the first Saturday, the label reads PRESEASON. The season label is chosen once per season; no season naming or rollover rules have been supplied. All screens read the computed week on every request, so no restart or weekly edit is needed. You can turn automatic counting off and enter a manual week. This keeps these labels synchronized: Starting Soon, Intermission, Standings, Game Winner, the in-game badge, and Stream Ending's side label follow the same season/week. No real Week 1 date has been selected yet; enter the actual opening Saturday to activate automatic counting.
+The control page has Season, Stage, and automatic week controls. Enter the season label and its Week 1 Saturday, using America/Chicago time by default. Week 1 starts on that Saturday, Week 2 starts the following Saturday, and so on; weeks change at local Saturday midnight, including daylight-saving changes. Before the first Saturday, the label reads PRESEASON. The season label is chosen once per season; no season naming or rollover rules have been supplied. All screens read the computed week on every request, so no restart or weekly edit is needed. You can turn automatic counting off and enter a manual week. This keeps these labels synchronized: Starting Soon, Intermission, Standings, Game Winner, the in-game badge, and Stream Ending's side label follow the same season/week. The confirmed 2026 schedule starts October 3, skips October 31 (Halloween), and resumes November 7 as Week 5. Set skipped Saturdays in the control page, one date per line. A skipped Saturday leaves the previous week number in place; it does not erase results or change the weekly API token. These dates are operator settings, not hardcoded into the scheduler.
 
 ```python
 from controller import set_season_schedule, set_globals
-# Example date only: replace with the actual opening Saturday.
-set_season_schedule(season="FALL 2026", first_saturday="2026-10-03")
+# Confirmed Fall 2026 schedule, excluding the Halloween break.
+set_season_schedule(season="FALL 2026", first_saturday="2026-10-03", skipped_saturdays=["2026-10-31"])
 set_globals(mapName="Olympus", gameNumber=3)
 ```
 
@@ -95,7 +95,7 @@ Bundled offline font fallbacks remain available. Google Fonts is optional. OBS i
 python3 -m unittest discover -s tests -v
 ```
 
-The 22 tests cover shared precedence, weekly metadata, screen isolation, persistence, rejected updates, override removal, list replacement, the real post-game-six scores, abandoned records, deduplication, school aliases, map IDs, tied champions, weekly token cleanup, and failed-poll data retention. Browser checks rendered all six pages and exercised Python updates, control-page edits, and imported API results. The fixture retains team scores and omits player identifiers.
+The 25 tests cover shared precedence, weekly metadata, screen isolation, persistence, rejected updates, override removal, list replacement, the real post-game-six scores, abandoned records, deduplication, school aliases, map IDs, tied champions, weekly token cleanup, and failed-poll data retention. Browser checks rendered all six pages and exercised Python updates, control-page edits, and imported API results. The fixture retains team scores and omits player identifiers.
 
 Intermission no longer displays an Up Next band; the results feed only describes completed games.
 

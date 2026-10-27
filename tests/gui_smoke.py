@@ -75,17 +75,20 @@ with tempfile.TemporaryDirectory() as temporary:
             assert page.locator('#staff textarea').nth(2).input_value()=='Producer One\nProducer Two'
             page.locator('#autoWeek').check()
             page.locator('#seasonStart').fill('2026-10-03')
+            page.locator('#skippedSaturdays').fill('2026-10-31')
             page.locator('#broadcast').click()
             page.get_by_text('Season and week updated on all screens.',exact=True).wait_for()
             assert page.locator('#week').is_disabled()
             assert state()['global']['seasonStart']=='2026-10-03'
             assert 'week' not in state()['global']
+            assert state()['global']['skippedSaturdays']==['2026-10-31']
             config=json.load(urlopen(base+'/api/config'))
             assert config['broadcast']['automatic'] is True
             page.reload()
             page.locator('#broadcast:not([disabled])').wait_for()
             assert page.locator('#autoWeek').is_checked()
             assert page.locator('#seasonStart').input_value()=='2026-10-03'
+            assert page.locator('#skippedSaturdays').input_value()=='2026-10-31'
             assert not errors,errors
             browser.close()
         print('PASS: GUI week, weekly token, production roles/names, text fields, switches, lists and reload persistence; isolated operator state')
